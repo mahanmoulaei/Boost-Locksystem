@@ -2,6 +2,23 @@
 
 # WILL BE COMPLETELY OVERHAULED(WIP)
 
+* If you are a mechanic and want to make a copy of the keys use this trigger
+```LUA
+TriggerServerEvent('JL-LockSystem:CreateKeyCopy', plate)
+```
+* If you want to auto add key on purchase use this trigger
+```LUA
+TriggerServerEvent('JL-LockSystem:AddKeys', plate)
+```
+or
+```LUA
+TriggerClientEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', source) --this will add the key for the vehicle player is sitting in
+```
+* If you want to remove the key use this trigger
+```LUA
+TriggerServerEvent('JL-LockSystem:RemoveKey', plate)
+```
+
 <br><br><br><h3 align='center'>Legal Notices</h2>
 <table><tr><td>
 Car Key System for <a href='https://github.com/overextended/es_extended'>ESX</a> and <a href='https://github.com/overextended/ox_inventory'>Ox_Inventory</a>
