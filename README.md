@@ -25,7 +25,7 @@ Car Key System for <a href='https://github.com/overextended/es_extended'>ESX</a>
  
 MIT License
 
-Copyright (c) 2021 boostless
+Copyright (c) 2021-2022 boostless
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

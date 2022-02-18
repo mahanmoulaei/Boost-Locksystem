@@ -1,6 +1,6 @@
 fx_version 'cerulean'
 game 'gta5' 
-
+lua54 'yes'
 author 'Boost#4383'
 description 'Boost`s locksystem with metadata'
 version '2.0.0'
@@ -36,4 +36,4 @@ files {
     'html/**'
 }
 
-lua54 'yes'
+

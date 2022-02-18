@@ -4,12 +4,12 @@ local uiOpen = false
 local PlayerPed = nil
 local mainThread = nil
 local lockThread = nil
+local bulletin = exports.bulletin
+local rprogress = exports.rprogress
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function()
-    
-	TriggerServerEvent('JL-LockSystem:Refresh')
-	TriggerServerEvent('JL-LockSystem:SyncEngine')
+	TriggerServerEvent('JL-LockSystem:Sync')
 end)
 
 CreateThread(function()
@@ -25,25 +25,16 @@ mainThread = SetInterval(function()
 
     if isInVehicle and GetPedInVehicleSeat(veh, -1) == PlayerPed then
         if startedEngine[plate] == true then
-			SetInterval(mainThread, 500)
-            SetVehicleEngineOn(veh, true, true, false)
+			SetInterval(mainThread, 1000)
+			if not GetIsVehicleEngineRunning(veh) then
+				SetVehicleEngineOn(veh, true, true, false)
+			end
         else
 			SetInterval(mainThread, 0)
             SetVehicleEngineOn(veh, false, false, true)
         end
     end
 end, 250)
-
-lockThread = SetInterval(function()
-    local ped = GetPlayerPed(-1)
-    if DoesEntityExist(GetVehiclePedIsTryingToEnter(PlayerPedId(ped))) then
-        local veh = GetVehiclePedIsTryingToEnter(PlayerPedId(ped))
-	    local lock = GetVehicleDoorLockStatus(veh)
-	    if lock == Config.LockStateLocked then
-	        ClearPedTasks(ped)
-	    end
-    else SetInterval(lockThread, 500)  end
-end, 10)
 
 function Search()
 	local PlayerPed = PlayerPedId()
@@ -80,7 +71,7 @@ function Search()
     end, plate)
 end
 
-exports('JL-LockSystem:LockUnlock', function(data, slot)
+exports('LockUnlock', function(data, slot)
     if not slot.metadata.plate then Notification('error', 'The key has no metadata !') return end
     OpenUi(slot.metadata.plate)
 end)
@@ -106,8 +97,8 @@ RegisterNUICallback('Lock', function(data)
     end
     if isInVehicle then
         if vehLockStatus == 1 then
-            --Progress(_('pr_lock'), 300)
-            SetVehicleDoorsLocked(veh, Config.LockStateLocked)
+            Progress(_('pr_lock'), 500)
+            SetVehicleDoorsLocked(veh, 2)
             Notification('success', _('lock_veh'))
         else
             Notification('error', _('locked'))
@@ -115,9 +106,10 @@ RegisterNUICallback('Lock', function(data)
     else
         if vehLockStatus == 1 then
             if #(playerCoords - GetEntityCoords(veh)) <= 4.0 then
-				PlayAnimation()
-                --Progress(_('pr_lock'), 300)
-                SetVehicleDoorsLocked(veh, Config.LockStateLocked)
+                Progress(_('pr_lock'), 1500)
+				CloseAllDoors(veh)
+				BlinkVehicleLight(veh)
+                SetVehicleDoorsLocked(veh, 2)
                 Notification('success', _('lock_veh'))
             else
                 Notification('error',_('too_far_veh'))
@@ -144,18 +136,18 @@ RegisterNUICallback('Unlock', function(data)
         return
     end
     if isInVehicle then
-        if vehLockStatus == Config.LockStateLocked then
-            --Progress(_('pr_unlock'), 300)
+        if vehLockStatus == 2 then
+            Progress(_('pr_unlock'), 500)
             SetVehicleDoorsLocked(veh, 1)
             Notification('success', _('unlock_veh'))
         else
             Notification('error', _('unlocked'))
         end
     else
-        if vehLockStatus == Config.LockStateLocked then
+        if vehLockStatus == 2 then
             if #(playerCoords - GetEntityCoords(veh)) <= 4.0 then
-                PlayAnimation()
-				--Progress(_('pr_unlock'), 300)
+				Progress(_('pr_unlock'), 1500)
+				BlinkVehicleLight(veh)
                 SetVehicleDoorsLocked(veh, 1)
                 Notification('success', _('unlock_veh'))
             else
@@ -179,12 +171,10 @@ RegisterNUICallback('Engine', function(data)
             return
         end
         if not startedEngine[plate] then
-            Progress(_('pr_engine_on'), 2000)
-            startedEngine[plate] = true
+            Progress(_('pr_engine_on'), 1000)
             TriggerServerEvent('JL-LockSystem:SyncEngine', plate, true)
         else
             Progress(_('pr_engine_off'), 1000)
-            startedEngine[plate] = false
             TriggerServerEvent('JL-LockSystem:SyncEngine', plate, false)
         end
     end
@@ -197,12 +187,11 @@ loadAnimDict = function(anim)
     end
 end
 
-RegisterNetEvent('JL-LockSystem:SetUpSearched', function(data)
-    searchedVeh = data
-end)
 
-RegisterNetEvent('JL-LockSystem:SetUpEngine', function(data)
-    startedEngine = data
+RegisterNetEvent('JL-LockSystem:Sync')
+AddEventHandler('JL-LockSystem:Sync', function(interactedVehicles, interactedEngines)
+	searchedVeh = interactedVehicles
+    startedEngine = interactedEngines
 end)
 
 function OpenUi(plate)
@@ -230,42 +219,30 @@ end
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() == resourceName then
 		CloseUi()
-    end
-    
+    end  
 end)
 
 function BlinkVehicleLight(vehicle)
-	SetVehicleInteriorlight(vehicle, true)
-	SetVehicleIndicatorLights(vehicle, 0, true)
-	SetVehicleIndicatorLights(vehicle, 1, true)
-	Citizen.Wait(450)
-	SetVehicleIndicatorLights(vehicle, 0, false)
-	SetVehicleIndicatorLights(vehicle, 1, false)
-	Citizen.Wait(450)
-	SetVehicleInteriorlight(vehicle, true)
-	SetVehicleIndicatorLights(vehicle, 0, true)
-	SetVehicleIndicatorLights(vehicle, 1, true)
-	Citizen.Wait(450)
-	SetVehicleInteriorlight(vehicle, false)
-	SetVehicleIndicatorLights(vehicle, 0, false)
-	SetVehicleIndicatorLights(vehicle, 1, false)
+	Wait(500)
+	SetVehicleLights(vehicle, 2)
+	Wait(100)
+	SetVehicleLights(vehicle, 0)
+	Wait(200)
+	SetVehicleLights(vehicle, 2)
+	Wait(100)
+	SetVehicleLights(vehicle, 0)
+	Wait(200)
+	SetVehicleLights(vehicle, 2)
+	Wait(100)
+	SetVehicleLights(vehicle, 0)
 end
 
-function PlayAnimation()
-	local playerPed = PlayerPedId()
-	local library = "anim@mp_player_intmenu@key_fob@"
-	local animmation = "fob_click"
-
-	ESX.Streaming.RequestAnimDict(library, function()
-		TaskPlayAnim(playerPed, library, animmation, 8.0, -8.0, -1, 0, 0, false, false, false)
-	end)
-	
-	local keyFob = CreateObject(GetHashKey("p_car_keys_01"), 0, 0, 0, true, true, true)
-    AttachEntityToEntity(keyFob, playerPed, GetPedBoneIndex(playerPed, 57005), 0.08, 0.0, -0.02, 0.0, -25.0, 130.0, true, true, false, true, 1, true)
-	
-	DeleteEntity(keyFob)
-    ClearPedTasksImmediately(PlayerPed)
+function CloseAllDoors(veh)
+	for i = 0, 5 do
+		SetVehicleDoorShut(veh, i, false) -- will close all doors from 0-5
+	end
 end
+
 
 RegisterNetEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', function()
     local PlayerPed = PlayerPedId()
@@ -282,3 +259,51 @@ RegisterNetEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', function()
 		TriggerServerEvent('JL-LockSystem:AddKeys', plate)
 	end
 end)
+
+function Notification(type, text)
+    if type == 'success' then
+        bulletin:SendSuccess(text, 3000, 'bottomleft', true)
+    elseif type == 'error' then
+        bulletin:SendError(text, 3000, 'bottomleft', true)
+    elseif type == 'info' then
+        bulletin:SendInfo(text, 3000, 'bottomleft', true)
+    end
+end
+
+function Progress(text, time)
+    if Config.UseProgressBar then
+		local PlayerPed = PlayerPedId()
+		if IsPedInAnyVehicle(PlayerPed, true) then
+			rprogress:Start(text, time)
+		else
+			rprogress:Custom({
+				Duration = time,
+				Label = text,
+				Animation = {
+					animationDictionary = "anim@mp_player_intmenu@key_fob@",
+					animationName = "fob_click",
+				},   
+				onStart = function()			
+					local keyFob = CreateObject(GetHashKey("p_car_keys_01"), 0, 0, 0, true, true, true)
+					AttachEntityToEntity(keyFob, PlayerPed, GetPedBoneIndex(PlayerPed, 57005), 0.08, 0.0, -0.02, 0.0, -25.0, 130.0, true, true, false, true, 1, true)
+					Wait(time)
+					DeleteEntity(keyFob)		
+				end	
+			})
+		end
+        
+    else
+		local PlayerPed = PlayerPedId()
+		if not IsPedInAnyVehicle(PlayerPed, true) then
+			local animationDictionary = "anim@mp_player_intmenu@key_fob@"
+			local animationName = "fob_click"
+			local keyFob = CreateObject(GetHashKey("p_car_keys_01"), 0, 0, 0, true, true, true)
+			AttachEntityToEntity(keyFob, PlayerPed, GetPedBoneIndex(PlayerPed, 57005), 0.08, 0.0, -0.02, 0.0, -25.0, 130.0, true, true, false, true, 1, true)
+			ESX.Streaming.RequestAnimDict(animationDictionary, function()
+				TaskPlayAnim(PlayerPed, animationDictionary, animationName, 8.0, -8.0, -1, 0, 0, false, false, false)
+				Wait(time)
+			end)
+			DeleteEntity(keyFob)
+		end
+	end
+end

@@ -1,13 +1,12 @@
-local searchedVeh = {}
-local startedEngine = {}
-local searchedFile
+local interactedVehicles, interactedEngines = {}, {}
 local ox_inventory = exports.ox_inventory
+local GetCurrentResourceName = GetCurrentResourceName()
 
 ESX.RegisterServerCallback('JL-LockSystem:HasKeys', function(source, cb, _plate)
     if HasKeys(source, _plate) then
-		if not searchedVeh[_plate] or searchedVeh[_plate] == false then
-			searchedVeh[_plate] = true
-			TriggerEvent('JL-LockSystem:Refresh')
+		if not interactedVehicles[_plate] or interactedVehicles[_plate] == false then
+			interactedVehicles[_plate] = true
+			Sync()
 		end
 		cb(true)
 	else
@@ -30,13 +29,24 @@ end)
 RegisterServerEvent('JL-LockSystem:AddKeys', function(_plate)
     local _source = source
     if HasKeys(_source, _plate) then
+		interactedVehicles[_plate] = true
         return
     end
-    searchedVeh[_plate] = true
-    TriggerEvent('JL-LockSystem:Refresh')
-    if ox_inventory:CanCarryItem(_source, 'car_keys', 1) then
-        ox_inventory:AddItem(_source, 'car_keys', 1, {plate = _plate, description = _U('key_description',_plate)})
+    
+	interactedVehicles[_plate] = true
+    Sync()
+	
+    if ox_inventory:CanCarryItem(_source, 'car_key', 1) then
+        ox_inventory:AddItem(_source, 'car_key', 1, {plate = _plate, description = _U('key_description',_plate)})
     end
+end)
+
+RegisterServerEvent('JL-LockSystem:RemoveKey', function(_plate)
+	if interactedVehicles[_plate] or interactedVehicles[_plate] == true then
+		interactedVehicles[_plate] = false
+		TriggerEvent('JL-LockSystem:SyncEngine', _plate, false)
+	end
+    HasKeys(source, _plate, true)
 end)
 
 RegisterServerEvent('JL-LockSystem:CreateKeyCopy', function(_plate)
@@ -45,62 +55,58 @@ RegisterServerEvent('JL-LockSystem:CreateKeyCopy', function(_plate)
         DropPlayer(xPlayer.source, 'kunet bezaram chaghal?')
         return
     end
-    if ox_inventory:CanCarryItem(xPlayer.source, 'car_keys', 1) then
-        ox_inventory:AddItem(xPlayer.source, 'car_keys', 1, {plate = _plate, description = _U('key_description',_plate)})
+    if ox_inventory:CanCarryItem(xPlayer.source, 'car_key', 1) then
+        ox_inventory:AddItem(xPlayer.source, 'car_key', 1, {plate = _plate, description = _U('key_description',_plate)})
     end
 end)
 
-RegisterServerEvent('JL-LockSystem:RemoveKey', function(_plate)
-	if searchedVeh[_plate] or searchedVeh[_plate] == true then
-		searchedVeh[_plate] = false
-		TriggerEvent('JL-LockSystem:Refresh')
-		TriggerEvent('JL-LockSystem:SyncEngine', _plate, false)
-	end
-    HasKeys(source, _plate, true)
-end)
-
-RegisterServerEvent('JL-LockSystem:Refresh', function()
-    if tablelength(searchedVeh) < 1 then
-        searchedFile = LoadResourceFile(GetCurrentResourceName(), './searchedVeh.json')
-        searchedVeh = json.decode(searchedFile)
-        print('[^6JL-LockSystem^0] Refreshed ' .. tablelength(json.decode(searchedFile)) .. ' searched vehicles !')
-        TriggerClientEvent('JL-LockSystem:SetUpSearched', -1, searchedVeh)
-    else
-        searchedFile = LoadResourceFile(GetCurrentResourceName(), './searchedVeh.json')
-        SaveResourceFile(GetCurrentResourceName(), 'searchedVeh.json', json.encode(searchedVeh), -1)
-        print('[^6JL-LockSystem^0] Refreshed ' .. tablelength(json.decode(searchedFile)) .. ' searched vehicles !')
-        TriggerClientEvent('JL-LockSystem:SetUpSearched', -1, searchedVeh)
-    end
+RegisterServerEvent('JL-LockSystem:Sync', function()
+    Sync()
 end)
 
 RegisterServerEvent('JL-LockSystem:SyncEngine', function(_plate, state)
-	if _plate and state then	
-		startedEngine[_plate] = state
+	if _plate ~= nil and state ~= nil then	
+		interactedEngines[_plate] = state
 	end
-	
-    SyncEngine()
+    Sync()
 end)
 
-function SyncEngine()
-	print('[^6JL-LockSystem^0] Synced ' .. tablelength(startedEngine) .. ' engines !')
-    TriggerClientEvent('JL-LockSystem:SetUpEngine', -1, startedEngine)
+function Sync()
+	if Config.Debug then
+		SyncVehicles()
+		SyncEngines()
+	end
+	TriggerClientEvent('JL-LockSystem:Sync', -1, interactedVehicles, interactedEngines)
+end
+
+function SyncEngines()	
+	local numberOfInteractedEngines = length(interactedEngines)
+	if numberOfInteractedEngines > 0 then     
+		print('[^6JL-LockSystem^0] Synced '..numberOfInteractedEngines..' Interacted Engines !')
+    end
+end
+
+function SyncVehicles()
+	local numberOfInteractedVehicles = length(interactedVehicles)
+	if numberOfInteractedVehicles > 0 then     
+		print('[^6JL-LockSystem^0] Synced '..numberOfInteractedVehicles..' Interacted Vehicles !')
+    end
 end
 
 AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() == resourceName then
-		Wait(500)
-		SaveResourceFile(GetCurrentResourceName(), 'searchedVeh.json', "{}", -1)
-		TriggerEvent('JL-LockSystem:Refresh')
+    if GetCurrentResourceName == resourceName then
+		resetTheTables()
+		Sync()
     end
 end)
 
 function HasKeys(source, plate, remove)
-    local keys = ox_inventory:Search(source, 'slots', 'car_keys')
+    local keys = ox_inventory:Search(source, 'slots', 'car_key')
 	if keys then
 		for k,v in pairs(keys) do
 			if v.metadata.plate == plate then
 				if remove then
-					ox_inventory:RemoveItem(source, 'car_keys', v.slot)
+					ox_inventory:RemoveItem(source, 'car_key', v.slot)
 					return true
 				else
 					return true
@@ -112,8 +118,19 @@ function HasKeys(source, plate, remove)
     return false
 end
   
-function tablelength(T)
+function length(T)
     local count = 0
     for _ in pairs(T) do count = count + 1 end
     return count
 end
+
+function resetTheTables()
+	interactedEngines = {}
+	interactedVehicles = {}
+	Sync()
+end
+
+ESX.RegisterCommand('resetCarKeysAndEngines', 'developer', function(xPlayer, args, showError) 
+	resetTheTables()
+	xPlayer.showNotification('All Car Key And Engine Tables Have Been Resetted!')
+end, true, {help = 'Reset The Car Key And Car Engine Tables', validate = false})
