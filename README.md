@@ -1,6 +1,5 @@
-# Fork Of Boost-Locksystem
-
-# WILL BE COMPLETELY OVERHAULED(WIP)
+# The Script Is Fully Working Now - Already Added Some Enhancements
+# WILL ADD SOME MORE ENHANCEMENTS AND FEATURES(WIP)
 
 * If you are a mechanic and want to make a copy of the keys use this trigger
 ```LUA
@@ -21,7 +20,7 @@ TriggerServerEvent('JL-LockSystem:RemoveKey', plate)
 
 <br><br><br><h3 align='center'>Legal Notices</h2>
 <table><tr><td>
-Car Key System for <a href='https://github.com/overextended/es_extended'>ESX</a> and <a href='https://github.com/overextended/ox_inventory'>Ox_Inventory</a>
+Car Key System for <a href='https://github.com/esx-framework/esx-legacy'>ESX-Legacy</a> and <a href='https://github.com/overextended/ox_inventory'>OX_Inventory</a>
  
 MIT License
 
