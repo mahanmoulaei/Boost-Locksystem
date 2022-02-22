@@ -9,7 +9,7 @@ local rprogress = exports.rprogress
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function()
-	TriggerServerEvent('JL-LockSystem:Sync')
+	TriggerServerEvent('Boost-Locksystem:Sync')
 end)
 
 CreateThread(function()
@@ -41,7 +41,7 @@ function Search()
     local vehicle = GetVehiclePedIsIn(PlayerPed, true)
     local plate = GetVehicleNumberPlateText(vehicle)
     local isInVehicle = IsPedInAnyVehicle(PlayerPed, false)
-    ESX.TriggerServerCallback('JL-LockSystem:HasKeys', function(hasKeys) 
+    ESX.TriggerServerCallback('Boost-Locksystem:HasKeys', function(hasKeys) 
         if hasKeys then
             Notification('info', _('has_key'))
             return
@@ -52,11 +52,11 @@ function Search()
             else
 			
                 if Config.OnlyRegisteredCars then
-                    ESX.TriggerServerCallback('JL-LockSystem:IsCarRegistered', function(isRegistered) 
+                    ESX.TriggerServerCallback('Boost-Locksystem:IsCarRegistered', function(isRegistered) 
                         if isRegistered then
                             searchedVeh[plate] = true
                             Notification('success', _('found_key'))
-                            TriggerServerEvent('JL-LockSystem:AddKeys', plate)
+                            TriggerServerEvent('Boost-Locksystem:AddKeys', plate)
                         else
                             Notification('error', _('not_registered'))
                         end
@@ -64,7 +64,7 @@ function Search()
                 else
                     searchedVeh[plate] = true
                     Notification('success', _('found_key'))
-                    TriggerServerEvent('JL-LockSystem:AddKeys', plate)
+                    TriggerServerEvent('Boost-Locksystem:AddKeys', plate)
                 end
             end
         end
@@ -172,10 +172,10 @@ RegisterNUICallback('Engine', function(data)
         end
         if not startedEngine[plate] then
             Progress(_('pr_engine_on'), 1000)
-            TriggerServerEvent('JL-LockSystem:SyncEngine', plate, true)
+            TriggerServerEvent('Boost-Locksystem:SyncEngine', plate, true)
         else
             Progress(_('pr_engine_off'), 1000)
-            TriggerServerEvent('JL-LockSystem:SyncEngine', plate, false)
+            TriggerServerEvent('Boost-Locksystem:SyncEngine', plate, false)
         end
     end
 end)
@@ -188,8 +188,8 @@ loadAnimDict = function(anim)
 end
 
 
-RegisterNetEvent('JL-LockSystem:Sync')
-AddEventHandler('JL-LockSystem:Sync', function(interactedVehicles, interactedEngines)
+RegisterNetEvent('Boost-Locksystem:Sync')
+AddEventHandler('Boost-Locksystem:Sync', function(interactedVehicles, interactedEngines)
 	searchedVeh = interactedVehicles
     startedEngine = interactedEngines
 end)
@@ -244,7 +244,7 @@ function CloseAllDoors(veh)
 end
 
 
-RegisterNetEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', function()
+RegisterNetEvent('Boost-Locksystem:AddKeysOfTheVehiclePedIsIn', function()
     local PlayerPed = PlayerPedId()
     local veh
 	local timeout = 1000
@@ -256,7 +256,7 @@ RegisterNetEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', function()
 	
 	local plate = GetVehicleNumberPlateText(veh)
 	if plate and plate ~= nil and plate ~= "" and plate ~= " " then
-		TriggerServerEvent('JL-LockSystem:AddKeys', plate)
+		TriggerServerEvent('Boost-Locksystem:AddKeys', plate)
 	end
 end)
 

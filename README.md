@@ -1,21 +1,21 @@
 # The Script Is Fully Working Now - Already Added Some Enhancements
-# WILL ADD SOME MORE ENHANCEMENTS AND FEATURES(WIP)
+# NEW VERSION WITH MORE ENHANCEMENTS COMING SOON
 
 * If you are a mechanic and want to make a copy of the keys use this trigger
 ```LUA
-TriggerServerEvent('JL-LockSystem:CreateKeyCopy', plate)
+TriggerServerEvent('Boost-Locksystem:CreateKeyCopy', plate)
 ```
 * If you want to auto add key on purchase use this trigger
 ```LUA
-TriggerServerEvent('JL-LockSystem:AddKeys', plate)
+TriggerServerEvent('Boost-Locksystem:AddKeys', plate)
 ```
 or
 ```LUA
-TriggerClientEvent('JL-LockSystem:AddKeysOfTheVehiclePedIsIn', source) --this will add the key for the vehicle player is sitting in
+TriggerClientEvent('Boost-Locksystem:AddKeysOfTheVehiclePedIsIn', source) --this will add the key for the vehicle player is sitting in
 ```
 * If you want to remove the key use this trigger
 ```LUA
-TriggerServerEvent('JL-LockSystem:RemoveKey', plate)
+TriggerServerEvent('Boost-Locksystem:RemoveKey', plate)
 ```
 
 <br><br><br><h3 align='center'>Legal Notices</h2>
